@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>demien rapp</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #000;
+            --fg: #fff;
+            --accent: #FF0000;
+            --font-main: 'Space Grotesk', sans-serif;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--fg);
+            font-family: var(--font-main);
+            font-size: 14px;
+            line-height: 1.2;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 860px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 32px;
+        }
+
+        /* VIEWPORT */
+        .viewport {
+            width: 100%;
+            background: #111;
+            border: 1px solid var(--fg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            min-height: 300px;
+            overflow: hidden;
+        }
+
+        canvas {
+            max-width: 100%;
+            max-height: 80vh;
+            image-rendering: pixelated;
+        }
+
+        .rec-indicator {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            color: var(--accent);
+            font-weight: bold;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+        .rec-indicator::before {
+            content: "";
+            width: 10px;
+            height: 10px;
+            background: var(--accent);
+        }
+
+        /* CONTROLS */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 24px;
+        }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+            display: block;
+            color: var(--fg);
+            border-left: 2px solid var(--accent);
+            padding-left: 8px;
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .control-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        /* SLIDERS */
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 2px;
+            background: #333;
+            outline: none;
+            margin: 14px 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 44px;
+            height: 24px;
+            background: var(--fg);
+            border: 1px solid var(--bg);
+            cursor: pointer;
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            background: var(--accent);
+        }
+
+        /* BUTTONS */
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        button, .file-label {
+            background: var(--bg);
+            color: var(--fg);
+            border: 1px solid var(--fg);
+            padding: 14px;
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-align: center;
+            display: block;
+            transition: border-color 0.15s, color 0.15s;
+        }
+
+        button:hover, .file-label:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        button:active {
+            background: #111;
+        }
+
+        button.active {
+            background: var(--accent);
+            color: var(--bg);
+            border-color: var(--accent);
+        }
+
+        .full-width { grid-column: span 2; }
+
+        input[type="file"] { display: none; }
+
+        footer {
+            margin-top: 40px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            border-top: 1px solid #111;
+            padding-top: 12px;
+        }
+
+        footer a {
+            color: var(--accent);
+            text-decoration: none;
+            border-bottom: 1px solid var(--accent);
+        }
+
+        footer a:hover {
+            background: var(--accent);
+            color: var(--bg);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="viewport">
+        <div id="rec-ui" class="rec-indicator">RECORDING</div>
+        <canvas id="main-canvas"></canvas>
+    </div>
+
+    <div class="grid">
+        <!-- INPUT SECTION -->
+        <div>
+            <span class="section-label">IO_Inputs</span>
+            <div class="button-group">
+                <label class="file-label">
+                    Load Source
+                    <input type="file" id="file-source" accept="image/*,video/*">
+                </label>
+                <button id="btn-cam">Live_Cam</button>
+                <label class="file-label full-width">
+                    Load Custom Map
+                    <input type="file" id="file-map" accept="image/*">
+                </label>
+            </div>
+        </div>
+
+        <!-- PARAMETERS SECTION -->
+        <div>
+            <span class="section-label">Engine_Params</span>
+            <div class="control-item">
+                <div class="control-header"><span>X_Strength</span><span id="v-x">60</span></div>
+                <input type="range" id="s-x" min="-400" max="400" value="60">
+            </div>
+            <div class="control-item">
+                <div class="control-header"><span>Y_Strength</span><span id="v-y">0</span></div>
+                <input type="range" id="s-y" min="-400" max="400" value="0">
+            </div>
+            <div class="control-item">
+                <div class="control-header"><span>Threshold</span><span id="v-t">100</span></div>
+                <input type="range" id="s-t" min="0" max="255" value="100">
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <span class="section-label">Export_Operations</span>
+        <div class="button-group">
+            <button id="btn-save">Save Still (PNG)</button>
+            <button id="btn-rec">Record Video (MP4)</button>
+        </div>
+    </div>
+
+    <footer>
+        THIS WAS MADE BY <a href="https://rappde.com" target="_blank">RAPPDE.COM</a>
+    </footer>
+</div>
+
+<video id="hidden-video" autoplay muted loop playsinline style="display:none"></video>
+
+<script>
+    const canvas = document.getElementById('main-canvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    const video = document.getElementById('hidden-video');
+    
+    // Sliders
+    const sX = document.getElementById('s-x');
+    const sY = document.getElementById('s-y');
+    const sT = document.getElementById('s-t');
+    
+    // Canvases for processing
+    const pCan = document.createElement('canvas'); 
+    const pCtx = pCan.getContext('2d');
+    const mCan = document.createElement('canvas'); 
+    const mCtx = mCan.getContext('2d');
+
+    let mode = 'none', isProc = false, sourceImg = null, mapImg = null;
+    let recorder, chunks = [];
+
+    // FILE LOADING
+    document.getElementById('file-source').onchange = (e) => loadFile(e.target.files[0], false);
+    document.getElementById('file-map').onchange = (e) => loadFile(e.target.files[0], true);
+
+    function loadFile(file, isMap) {
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        if (!isMap) {
+            if (file.type.startsWith('video/')) {
+                mode = 'video'; video.src = url;
+                video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight); video.play(); };
+            } else {
+                mode = 'image';
+                const img = new Image();
+                img.onload = () => { sourceImg = img; initDim(img.width, img.height); render(); };
+                img.src = url;
+            }
+        } else {
+            const img = new Image();
+            img.onload = () => { mapImg = img; render(); };
+            img.src = url;
+        }
+    }
+
+    function initDim(w, h) {
+        const limit = 1200;
+        const scale = w > limit ? limit / w : 1;
+        canvas.width = Math.floor(w * scale);
+        canvas.height = Math.floor(h * scale);
+    }
+
+    document.getElementById('btn-cam').onclick = async function() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280 } });
+            video.srcObject = stream; mode = 'live';
+            video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight); video.play(); };
+            this.classList.add('active');
+        } catch(e) { alert("Access Denied"); }
+    };
+
+    // CORE RENDERING
+    function render() {
+        if (isProc || mode === 'none') return;
+        isProc = true;
+
+        const strX = parseInt(sX.value);
+        const strY = parseInt(sY.value);
+        const thresh = parseInt(sT.value);
+
+        pCan.width = mCan.width = canvas.width;
+        pCan.height = mCan.height = canvas.height;
+
+        pCtx.drawImage(mode === 'image' ? sourceImg : video, 0, 0, pCan.width, pCan.height);
+        
+        if (mapImg) {
+            mCtx.drawImage(mapImg, 0, 0, mCan.width, mCan.height);
+        } else {
+            mCtx.drawImage(pCan, 0, 0, mCan.width, mCan.height);
+        }
+
+        const sData = pCtx.getImageData(0, 0, pCan.width, pCan.height);
+        const mData = mCtx.getImageData(0, 0, mCan.width, mCan.height).data;
+        const out = new Uint8ClampedArray(sData.data);
+        const pix = sData.data;
+        const w = pCan.width;
+        const h = pCan.height;
+
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = (y * w + x) * 4;
+                const mVal = (mData[i] + mData[i+1] + mData[i+2]) / 3;
+
+                if (mVal > thresh) {
+                    const f = (mVal - 128) / 128;
+                    const tx = Math.min(w - 1, Math.max(0, x + Math.floor(f * strX)));
+                    const ty = Math.min(h - 1, Math.max(0, y + Math.floor(f * strY)));
+                    const ti = (ty * w + tx) * 4;
+
+                    out[i] = pix[ti];
+                    out[i+1] = pix[ti+1];
+                    out[i+2] = pix[ti+2];
+                }
+            }
+        }
+
+        pCtx.putImageData(new ImageData(out, w, h), 0, 0);
+        ctx.drawImage(pCan, 0, 0);
+        isProc = false;
+    }
+
+    function anim() {
+        if (mode === 'video' || mode === 'live') render();
+        requestAnimationFrame(anim);
+    }
+    anim();
+
+    [sX, sY, sT].forEach(el => el.oninput = () => {
+        document.getElementById('v-' + el.id.split('-')[1]).textContent = el.value;
+        if (mode === 'image') render();
+    });
+
+    document.getElementById('btn-save').onclick = () => {
+        const a = document.createElement('a');
+        a.href = canvas.toDataURL('image/png');
+        a.download = `DR_UNIT_${Date.now()}.png`; a.click();
+    };
+
+    document.getElementById('btn-rec').onclick = function() {
+        if (recorder && recorder.state === "recording") {
+            recorder.stop();
+            this.classList.remove('active');
+            document.getElementById('rec-ui').style.display = "none";
+        } else {
+            chunks = [];
+            const mime = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' : 'video/webm;codecs=h264';
+            recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: mime });
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const b = new Blob(chunks, { type: mime });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(b); a.download = `DR_UNIT_SIG_${Date.now()}.mp4`; a.click();
+            };
+            recorder.start();
+            this.classList.add('active');
+            document.getElementById('rec-ui').style.display = "flex";
+        }
+    };
+
+    canvas.width = 800; canvas.height = 450;
+    ctx.fillStyle = "#111"; ctx.fillRect(0,0,800,450);
+</script>
+</body>
+</html>
