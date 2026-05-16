@@ -26,16 +26,36 @@
             justify-content: center;
         }
 
+        /* LAYOUT OPTIMIERUNG */
         .container {
             width: 100%;
-            max-width: 860px;
+            max-width: 1200px;
             padding: 24px;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            /* Definiert zwei Spalten: Bild (flexibel) | Parameter (400px) */
+            grid-template-columns: 1fr 400px;
             gap: 32px;
+            align-items: start;
         }
 
-        /* VIEWPORT */
+        /* MOBILE VERSION */
+        @media (max-width: 900px) {
+            .container {
+                display: flex;
+                flex-direction: column;
+                padding: 16px;
+            }
+            .viewport {
+                position: relative;
+                top: 0;
+                order: 1; /* Bild oben */
+            }
+            .grid, .export-section, footer {
+                order: 2; /* Parameter unten */
+            }
+        }
+
+        /* VIEWPORT (LINKE SEITE) */
         .viewport {
             width: 100%;
             background: #111;
@@ -43,14 +63,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
+            position: sticky; /* Bild bleibt beim Scrollen der Parameter sichtbar */
+            top: 24px;
             min-height: 300px;
             overflow: hidden;
+            grid-column: 1;
+            grid-row: 1 / 4; /* Spannt über alle Parameter-Reihen */
         }
 
         canvas {
             max-width: 100%;
-            max-height: 80vh;
+            height: auto;
+            max-height: 85vh;
             image-rendering: pixelated;
         }
 
@@ -63,6 +87,7 @@
             display: none;
             align-items: center;
             gap: 8px;
+            z-index: 10;
         }
         .rec-indicator::before {
             content: "";
@@ -71,15 +96,17 @@
             background: var(--accent);
         }
 
-        /* CONTROLS */
+        /* CONTROLS (RECHTE SEITE) */
         .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-column: 2;
+            display: flex;
+            flex-direction: column;
             gap: 24px;
         }
 
-        @media (max-width: 600px) {
-            .grid { grid-template-columns: 1fr; }
+        .export-section {
+            grid-column: 2;
+            margin-top: 12px;
         }
 
         .section-label {
@@ -168,10 +195,10 @@
         }
 
         .full-width { grid-column: span 2; }
-
         input[type="file"] { display: none; }
 
         footer {
+            grid-column: 1 / -1;
             margin-top: 40px;
             font-size: 0.75rem;
             text-transform: uppercase;
@@ -194,11 +221,13 @@
 <body>
 
 <div class="container">
+    <!-- VIEWPORT LINKS -->
     <div class="viewport">
         <div id="rec-ui" class="rec-indicator">RECORDING</div>
         <canvas id="main-canvas"></canvas>
     </div>
 
+    <!-- CONTROLS RECHTS -->
     <div class="grid">
         <!-- INPUT SECTION -->
         <div>
@@ -234,7 +263,8 @@
         </div>
     </div>
 
-    <div>
+    <!-- EXPORT RECHTS UNTER PARAMETERN -->
+    <div class="export-section">
         <span class="section-label">Export_Operations</span>
         <div class="button-group">
             <button id="btn-save">Save Still (PNG)</button>
@@ -250,16 +280,13 @@
 <video id="hidden-video" autoplay muted loop playsinline style="display:none"></video>
 
 <script>
+    // JS FUNKTIONALITÄT BLEIBT UNVERÄNDERT
     const canvas = document.getElementById('main-canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
     const video = document.getElementById('hidden-video');
-    
-    // Sliders
     const sX = document.getElementById('s-x');
     const sY = document.getElementById('s-y');
     const sT = document.getElementById('s-t');
-    
-    // Canvases for processing
     const pCan = document.createElement('canvas'); 
     const pCtx = pCan.getContext('2d');
     const mCan = document.createElement('canvas'); 
@@ -268,7 +295,6 @@
     let mode = 'none', isProc = false, sourceImg = null, mapImg = null;
     let recorder, chunks = [];
 
-    // FILE LOADING
     document.getElementById('file-source').onchange = (e) => loadFile(e.target.files[0], false);
     document.getElementById('file-map').onchange = (e) => loadFile(e.target.files[0], true);
 
@@ -308,7 +334,6 @@
         } catch(e) { alert("Access Denied"); }
     };
 
-    // CORE RENDERING
     function render() {
         if (isProc || mode === 'none') return;
         isProc = true;
