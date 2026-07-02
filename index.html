@@ -1,237 +1,317 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>demien rapp</title>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <title>DISPLACE · Demien Rapp</title>
+
+    <!-- MANUAL: self-hosted verlangt. Beim Deploy dieses CDN gegen eigene @font-face tauschen. -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@400;600&family=JetBrains+Mono:wght@500;700&family=Silkscreen&display=swap" rel="stylesheet">
+
     <style>
         :root {
-            --bg: #000;
-            --fg: #fff;
-            --accent: #FF0000;
-            --font-main: 'Space Grotesk', sans-serif;
+            --paper: #F2F0EB;
+            --ink: #0B0B0C;
+            --muted: #56565B;
+            --line: #D7D4CC;
+            --hi: #000000;
+            --ink-raise: #E8E5DD;
+            --line-soft: #E3E0D8;
+            --invert-bg: #0B0B0C;
+            --invert-fg: #F2F0EB;
+
+            --container: 1240px;
+            --gutter: clamp(18px, 4vw, 56px);
+            --ease-out: cubic-bezier(.16, 1, .3, 1);
+            --speed: 0.5s;
+
+            --font-display: 'Bricolage Grotesque', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-pixel: 'Silkscreen', monospace;
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
+        html, body { margin: 0; }
+
         body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--fg);
-            font-family: var(--font-main);
-            font-size: 14px;
-            line-height: 1.2;
-            display: flex;
-            justify-content: center;
+            background: var(--paper);
+            color: var(--ink);
+            font-family: var(--font-body);
+            font-size: clamp(0.95rem, 0.9rem + 0.3vw, 1.05rem);
+            line-height: 1.55;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* LAYOUT OPTIMIERUNG */
+        /* ---- INVERTIERTER BLOCK (genau 1x pro Seite) ---- */
+        .topbar {
+            background: var(--invert-bg);
+            color: var(--invert-fg);
+            padding: clamp(20px, 3vw, 34px) var(--gutter);
+        }
+        .topbar-inner {
+            max-width: var(--container);
+            margin: 0 auto;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .brand {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: clamp(2.2rem, 7vw, 5.5rem);
+            line-height: 0.88;
+            letter-spacing: -0.03em;
+            margin: 0;
+            text-transform: uppercase;
+            overflow-wrap: anywhere;
+        }
+        .brand-meta {
+            font-family: var(--font-mono);
+            font-weight: 500;
+            font-size: clamp(0.72rem, 0.7rem + 0.2vw, 0.82rem);
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: rgba(242, 240, 235, 0.55);
+            margin: 0;
+        }
+        .pixel {
+            font-family: var(--font-pixel);
+            font-size: 0.66em;
+            color: var(--invert-fg);
+            letter-spacing: 0;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            .brand { animation: glitch var(--speed) var(--ease-out) both; }
+            .topbar:hover .brand { animation: glitch var(--speed) var(--ease-out); }
+            @keyframes glitch {
+                0%   { transform: translateX(0); text-shadow: none; }
+                18%  { transform: translateX(-3px); text-shadow: 3px 0 var(--paper), -3px 0 var(--invert-bg); }
+                36%  { transform: translateX(2px); text-shadow: -2px 0 var(--paper); }
+                54%  { transform: translateX(-1px); text-shadow: 2px 0 var(--paper); }
+                100% { transform: translateX(0); text-shadow: none; }
+            }
+        }
+
+        /* ---- LAYOUT ---- */
         .container {
-            width: 100%;
-            max-width: 1200px;
-            padding: 24px;
+            max-width: var(--container);
+            margin: 0 auto;
+            padding: clamp(28px, 5vw, 64px) var(--gutter) clamp(40px, 6vw, 96px);
             display: grid;
-            /* Definiert zwei Spalten: Bild (flexibel) | Parameter (400px) */
-            grid-template-columns: 1fr 400px;
-            gap: 32px;
+            grid-template-columns: 1fr 380px;
+            gap: clamp(24px, 4vw, 48px);
             align-items: start;
         }
 
-        /* MOBILE VERSION */
         @media (max-width: 900px) {
             .container {
                 display: flex;
                 flex-direction: column;
-                padding: 16px;
+                gap: 24px;
             }
-            .viewport {
-                position: relative;
-                top: 0;
-                order: 1; /* Bild oben */
-            }
-            .grid, .export-section, footer {
-                order: 2; /* Parameter unten */
-            }
+            .viewport { order: 1; }
+            .controls, footer { order: 2; }
+            canvas { max-height: 50vh; }
         }
 
-        /* VIEWPORT (LINKE SEITE) */
+        /* ---- VIEWPORT ---- */
         .viewport {
             width: 100%;
-            background: #111;
-            border: 1px solid var(--fg);
+            background: var(--ink-raise);
+            border: 1px solid var(--ink);
             display: flex;
             align-items: center;
             justify-content: center;
-            position: sticky; /* Bild bleibt beim Scrollen der Parameter sichtbar */
-            top: 24px;
-            min-height: 300px;
+            min-height: 280px;
             overflow: hidden;
-            grid-column: 1;
-            grid-row: 1 / 4; /* Spannt über alle Parameter-Reihen */
+            position: sticky;
+            top: 12px;
         }
-
         canvas {
             max-width: 100%;
             height: auto;
-            max-height: 85vh;
+            max-height: 80vh;
             image-rendering: pixelated;
+            display: block;
         }
 
         .rec-indicator {
             position: absolute;
             top: 12px;
             right: 12px;
-            color: var(--accent);
-            font-weight: bold;
             display: none;
             align-items: center;
             gap: 8px;
-            z-index: 10;
+            z-index: 20;
+            background: var(--ink);
+            color: var(--paper);
+            font-family: var(--font-mono);
+            font-weight: 700;
+            font-size: 0.7rem;
+            letter-spacing: 0.14em;
+            padding: 5px 9px;
         }
         .rec-indicator::before {
             content: "";
-            width: 10px;
-            height: 10px;
-            background: var(--accent);
+            width: 9px;
+            height: 9px;
+            background: var(--paper);
+            animation: blink 1s steps(1) infinite;
         }
+        @keyframes blink { 50% { opacity: 0; } }
 
-        /* CONTROLS (RECHTE SEITE) */
-        .grid {
-            grid-column: 2;
+        /* ---- CONTROLS ---- */
+        .controls {
             display: flex;
             flex-direction: column;
-            gap: 24px;
+            gap: clamp(24px, 3vw, 34px);
         }
 
-        .export-section {
-            grid-column: 2;
-            margin-top: 12px;
-        }
-
-        .section-label {
-            font-size: 0.75rem;
+        .eyebrow {
+            font-family: var(--font-mono);
             font-weight: 700;
+            font-size: 0.72rem;
             text-transform: uppercase;
-            margin-bottom: 12px;
-            display: block;
-            color: var(--fg);
-            border-left: 2px solid var(--accent);
-            padding-left: 8px;
+            letter-spacing: 0.16em;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .eyebrow::before {
+            content: "";
+            width: 24px;
+            height: 1px;
+            background: var(--ink);
+            flex: none;
         }
 
         .control-item {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
         }
-
         .control-header {
             display: flex;
             justify-content: space-between;
-            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
             text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
         }
+        .control-header .val { color: var(--ink); font-weight: 700; }
 
-        /* SLIDERS */
+        /* ---- SLIDERS ---- */
         input[type="range"] {
             -webkit-appearance: none;
+            appearance: none;
             width: 100%;
-            height: 2px;
-            background: #333;
+            height: 1px;
+            background: var(--line);
             outline: none;
-            margin: 14px 0;
+            margin: 16px 0;
+            touch-action: pan-y;
         }
-
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
             width: 44px;
-            height: 24px;
-            background: var(--fg);
-            border: 1px solid var(--bg);
+            height: 22px;
+            background: var(--ink);
+            border: 1px solid var(--paper);
+            border-radius: 0;
             cursor: pointer;
         }
-
-        input[type="range"]:active::-webkit-slider-thumb {
-            background: var(--accent);
+        input[type="range"]::-moz-range-thumb {
+            width: 44px;
+            height: 22px;
+            background: var(--ink);
+            border: 1px solid var(--paper);
+            border-radius: 0;
+            cursor: pointer;
         }
+        input[type="range"]:active::-webkit-slider-thumb { background: var(--paper); border-color: var(--ink); }
+        input[type="range"]:active::-moz-range-thumb { background: var(--paper); border-color: var(--ink); }
+        input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
 
-        /* BUTTONS */
+        /* ---- BUTTONS ---- */
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 8px;
         }
-
         button, .file-label {
-            background: var(--bg);
-            color: var(--fg);
-            border: 1px solid var(--fg);
+            background: var(--paper);
+            color: var(--ink);
+            border: 1px solid var(--ink);
+            border-radius: 0;
             padding: 14px;
-            font-family: inherit;
-            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
             font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 0.12em;
             cursor: pointer;
             text-align: center;
             display: block;
-            transition: border-color 0.15s, color 0.15s;
+            min-height: 46px;
+            transition: background var(--speed) var(--ease-out), color var(--speed) var(--ease-out);
         }
-
-        button:hover, .file-label:hover {
-            border-color: var(--accent);
-            color: var(--accent);
-        }
-
-        button:active {
-            background: #111;
-        }
-
-        button.active {
-            background: var(--accent);
-            color: var(--bg);
-            border-color: var(--accent);
-        }
+        button:hover, .file-label:hover { background: var(--ink); color: var(--paper); }
+        button:focus-visible, .file-label:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+        button.active { background: var(--ink); color: var(--paper); }
+        button:disabled { opacity: 0.35; cursor: not-allowed; }
+        button:disabled:hover { background: var(--paper); color: var(--ink); }
 
         .full-width { grid-column: span 2; }
         input[type="file"] { display: none; }
 
         footer {
             grid-column: 1 / -1;
-            margin-top: 40px;
-            font-size: 0.75rem;
+            margin-top: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
             text-transform: uppercase;
-            border-top: 1px solid #111;
-            padding-top: 12px;
+            letter-spacing: 0.12em;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
+            padding-top: 16px;
         }
-
         footer a {
-            color: var(--accent);
+            color: var(--ink);
             text-decoration: none;
-            border-bottom: 1px solid var(--accent);
+            border-bottom: 1px solid var(--ink);
+            transition: background var(--speed) var(--ease-out), color var(--speed) var(--ease-out);
         }
-
-        footer a:hover {
-            background: var(--accent);
-            color: var(--bg);
-        }
+        footer a:hover { background: var(--ink); color: var(--paper); }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <!-- VIEWPORT LINKS -->
-    <div class="viewport">
-        <div id="rec-ui" class="rec-indicator">RECORDING</div>
-        <canvas id="main-canvas"></canvas>
+<header class="topbar">
+    <div class="topbar-inner">
+        <h1 class="brand">Displacement_Unit</h1>
     </div>
+</header>
 
-    <!-- CONTROLS RECHTS -->
-    <div class="grid">
-        <!-- INPUT SECTION -->
+<main class="container">
+    <!-- LINKS: BILD -->
+    <section class="viewport" id="viewport">
+        <div id="rec-ui" class="rec-indicator">REC</div>
+        <canvas id="main-canvas"></canvas>
+    </section>
+
+    <!-- RECHTS: PARAMETER -->
+    <aside class="controls">
         <div>
-            <span class="section-label">IO_Inputs</span>
             <div class="button-group">
                 <label class="file-label">
                     Load Source
@@ -245,146 +325,206 @@
             </div>
         </div>
 
-        <!-- PARAMETERS SECTION -->
         <div>
-            <span class="section-label">Engine_Params</span>
             <div class="control-item">
-                <div class="control-header"><span>X_Strength</span><span id="v-x">60</span></div>
+                <div class="control-header"><span>X_Strength</span><span class="val" id="v-x">60</span></div>
                 <input type="range" id="s-x" min="-400" max="400" value="60">
             </div>
             <div class="control-item">
-                <div class="control-header"><span>Y_Strength</span><span id="v-y">0</span></div>
+                <div class="control-header"><span>Y_Strength</span><span class="val" id="v-y">0</span></div>
                 <input type="range" id="s-y" min="-400" max="400" value="0">
             </div>
             <div class="control-item">
-                <div class="control-header"><span>Threshold</span><span id="v-t">100</span></div>
+                <div class="control-header"><span>Threshold</span><span class="val" id="v-t">100</span></div>
                 <input type="range" id="s-t" min="0" max="255" value="100">
             </div>
         </div>
-    </div>
 
-    <!-- EXPORT RECHTS UNTER PARAMETERN -->
-    <div class="export-section">
-        <span class="section-label">Export_Operations</span>
-        <div class="button-group">
-            <button id="btn-save">Save Still (PNG)</button>
-            <button id="btn-rec">Record Video (MP4)</button>
+        <div>
+            <div class="button-group">
+                <button id="btn-save">Save Still (PNG)</button>
+                <button id="btn-rec">Record Video</button>
+            </div>
         </div>
-    </div>
+    </aside>
 
     <footer>
-        THIS WAS MADE BY <a href="https://rappde.com" target="_blank">RAPPDE.COM</a>
+        THIS WAS MADE BY <a href="https://rappde.com" target="_blank" rel="noopener">RAPPDE.COM</a>
     </footer>
-</div>
+</main>
 
 <video id="hidden-video" autoplay muted loop playsinline style="display:none"></video>
 
 <script>
-    // JS FUNKTIONALITÄT BLEIBT UNVERÄNDERT
     const canvas = document.getElementById('main-canvas');
     const ctx = canvas.getContext('2d', { alpha: false });
     const video = document.getElementById('hidden-video');
     const sX = document.getElementById('s-x');
     const sY = document.getElementById('s-y');
     const sT = document.getElementById('s-t');
-    const pCan = document.createElement('canvas'); 
-    const pCtx = pCan.getContext('2d');
-    const mCan = document.createElement('canvas'); 
-    const mCtx = mCan.getContext('2d');
+    const btnCam = document.getElementById('btn-cam');
+    const btnRec = document.getElementById('btn-rec');
+
+    // willReadFrequently: verhindert das Deopt beim wiederholten getImageData
+    const pCan = document.createElement('canvas');
+    const pCtx = pCan.getContext('2d', { willReadFrequently: true });
+    const mCan = document.createElement('canvas');
+    const mCtx = mCan.getContext('2d', { willReadFrequently: true });
 
     let mode = 'none', isProc = false, sourceImg = null, mapImg = null;
     let recorder, chunks = [];
+    let camStream = null;
+
+    let outBuf = null;
+    let mapCache = null, mapCacheImg = null, mapCacheW = 0, mapCacheH = 0;
+
+    const isMobile = window.matchMedia('(pointer: coarse)').matches
+        || window.matchMedia('(max-width: 900px)').matches;
+
+    // Per-Pixel-Loop ist der Flaschenhals: Bewegtbild niedriger auflösen als Stills
+    function limitFor(m) {
+        if (m === 'image') return isMobile ? 900 : 1200;
+        return isMobile ? 540 : 800;
+    }
+
+    // captureStream fehlt z.B. auf iOS Safari
+    const recSupported = typeof canvas.captureStream === 'function' && typeof window.MediaRecorder === 'function';
+    if (!recSupported) {
+        btnRec.disabled = true;
+        btnRec.textContent = 'Rec N/A';
+    }
 
     document.getElementById('file-source').onchange = (e) => loadFile(e.target.files[0], false);
     document.getElementById('file-map').onchange = (e) => loadFile(e.target.files[0], true);
+
+    // Leerer Zustand: Paper-Fläche mit Mono-Label statt schwarzem Block
+    function drawPlaceholder() {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#E8E5DD';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#0B0B0C';
+        const fs = Math.max(14, Math.round(canvas.width * 0.035));
+        ctx.font = '700 ' + fs + "px 'JetBrains Mono', monospace";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('NO INPUT', canvas.width / 2, canvas.height / 2);
+    }
+
+    function stopCam() {
+        if (!camStream) return;
+        camStream.getTracks().forEach(t => t.stop());
+        camStream = null;
+        video.srcObject = null;
+        btnCam.classList.remove('active');
+    }
 
     function loadFile(file, isMap) {
         if (!file) return;
         const url = URL.createObjectURL(file);
         if (!isMap) {
+            stopCam();
             if (file.type.startsWith('video/')) {
                 mode = 'video'; video.src = url;
-                video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight); video.play(); };
+                video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight, limitFor('video')); video.play(); };
             } else {
                 mode = 'image';
                 const img = new Image();
-                img.onload = () => { sourceImg = img; initDim(img.width, img.height); render(); };
+                img.onload = () => { sourceImg = img; initDim(img.width, img.height, limitFor('image')); render(); };
                 img.src = url;
             }
         } else {
             const img = new Image();
-            img.onload = () => { mapImg = img; render(); };
+            img.onload = () => { mapImg = img; mapCacheImg = null; render(); };
             img.src = url;
         }
     }
 
-    function initDim(w, h) {
-        const limit = 1200;
+    function initDim(w, h, limit) {
         const scale = w > limit ? limit / w : 1;
         canvas.width = Math.floor(w * scale);
         canvas.height = Math.floor(h * scale);
     }
 
-    document.getElementById('btn-cam').onclick = async function() {
+    btnCam.onclick = async function() {
+        if (camStream) {
+            stopCam();
+            mode = 'none';
+            drawPlaceholder();
+            return;
+        }
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 1280 } });
-            video.srcObject = stream; mode = 'live';
-            video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight); video.play(); };
+            camStream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 1280 }, facingMode: { ideal: 'environment' } }
+            });
+            video.srcObject = camStream; mode = 'live';
+            video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight, limitFor('live')); video.play(); };
             this.classList.add('active');
-        } catch(e) { alert("Access Denied"); }
+        } catch (e) { alert("Access Denied"); camStream = null; }
     };
 
     function render() {
         if (isProc || mode === 'none') return;
+        if ((mode === 'video' || mode === 'live') && video.readyState < 2) return;
         isProc = true;
 
         const strX = parseInt(sX.value);
         const strY = parseInt(sY.value);
         const thresh = parseInt(sT.value);
 
-        pCan.width = mCan.width = canvas.width;
-        pCan.height = mCan.height = canvas.height;
+        const w = canvas.width, h = canvas.height;
+        pCan.width = w; pCan.height = h;
 
-        pCtx.drawImage(mode === 'image' ? sourceImg : video, 0, 0, pCan.width, pCan.height);
-        
+        pCtx.drawImage(mode === 'image' ? sourceImg : video, 0, 0, w, h);
+        const sData = pCtx.getImageData(0, 0, w, h);
+        const pix = sData.data;
+
+        // Displacement-Quelle: Custom-Map (gecacht) oder direkt die Luminanz der Quelle
+        let mData;
         if (mapImg) {
-            mCtx.drawImage(mapImg, 0, 0, mCan.width, mCan.height);
+            if (mapCacheImg === mapImg && mapCacheW === w && mapCacheH === h) {
+                mData = mapCache;
+            } else {
+                mCan.width = w; mCan.height = h;
+                mCtx.drawImage(mapImg, 0, 0, w, h);
+                mData = mCtx.getImageData(0, 0, w, h).data;
+                mapCache = mData; mapCacheImg = mapImg; mapCacheW = w; mapCacheH = h;
+            }
         } else {
-            mCtx.drawImage(pCan, 0, 0, mCan.width, mCan.height);
+            mData = pix;
         }
 
-        const sData = pCtx.getImageData(0, 0, pCan.width, pCan.height);
-        const mData = mCtx.getImageData(0, 0, mCan.width, mCan.height).data;
-        const out = new Uint8ClampedArray(sData.data);
-        const pix = sData.data;
-        const w = pCan.width;
-        const h = pCan.height;
+        const need = pix.length;
+        if (!outBuf || outBuf.length !== need) outBuf = new Uint8ClampedArray(need);
+        outBuf.set(pix);
 
+        const maxX = w - 1, maxY = h - 1;
         for (let y = 0; y < h; y++) {
+            const row = y * w;
             for (let x = 0; x < w; x++) {
-                const i = (y * w + x) * 4;
-                const mVal = (mData[i] + mData[i+1] + mData[i+2]) / 3;
+                const i = (row + x) * 4;
+                const mVal = (mData[i] + mData[i + 1] + mData[i + 2]) / 3;
 
                 if (mVal > thresh) {
                     const f = (mVal - 128) / 128;
-                    const tx = Math.min(w - 1, Math.max(0, x + Math.floor(f * strX)));
-                    const ty = Math.min(h - 1, Math.max(0, y + Math.floor(f * strY)));
+                    let tx = x + Math.floor(f * strX);
+                    let ty = y + Math.floor(f * strY);
+                    if (tx < 0) tx = 0; else if (tx > maxX) tx = maxX;
+                    if (ty < 0) ty = 0; else if (ty > maxY) ty = maxY;
                     const ti = (ty * w + tx) * 4;
 
-                    out[i] = pix[ti];
-                    out[i+1] = pix[ti+1];
-                    out[i+2] = pix[ti+2];
+                    outBuf[i] = pix[ti];
+                    outBuf[i + 1] = pix[ti + 1];
+                    outBuf[i + 2] = pix[ti + 2];
                 }
             }
         }
 
-        pCtx.putImageData(new ImageData(out, w, h), 0, 0);
-        ctx.drawImage(pCan, 0, 0);
+        ctx.putImageData(new ImageData(outBuf, w, h), 0, 0);
         isProc = false;
     }
 
     function anim() {
-        if (mode === 'video' || mode === 'live') render();
+        if ((mode === 'video' || mode === 'live') && video.readyState >= 2) render();
         requestAnimationFrame(anim);
     }
     anim();
@@ -400,20 +540,22 @@
         a.download = `DR_UNIT_${Date.now()}.png`; a.click();
     };
 
-    document.getElementById('btn-rec').onclick = function() {
+    btnRec.onclick = function() {
         if (recorder && recorder.state === "recording") {
             recorder.stop();
             this.classList.remove('active');
             document.getElementById('rec-ui').style.display = "none";
         } else {
             chunks = [];
-            const mime = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1') ? 'video/mp4;codecs=avc1' : 'video/webm;codecs=h264';
-            recorder = new MediaRecorder(canvas.captureStream(30), { mimeType: mime });
-            recorder.ondataavailable = e => chunks.push(e.data);
+            const candidates = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=h264', 'video/webm'];
+            const mime = candidates.find(t => MediaRecorder.isTypeSupported(t)) || '';
+            const ext = mime.includes('mp4') ? 'mp4' : 'webm';
+            recorder = new MediaRecorder(canvas.captureStream(30), mime ? { mimeType: mime } : undefined);
+            recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
             recorder.onstop = () => {
-                const b = new Blob(chunks, { type: mime });
+                const b = new Blob(chunks, { type: mime || 'video/webm' });
                 const a = document.createElement('a');
-                a.href = URL.createObjectURL(b); a.download = `DR_UNIT_SIG_${Date.now()}.mp4`; a.click();
+                a.href = URL.createObjectURL(b); a.download = `DR_UNIT_SIG_${Date.now()}.${ext}`; a.click();
             };
             recorder.start();
             this.classList.add('active');
@@ -421,8 +563,12 @@
         }
     };
 
+    // Init
     canvas.width = 800; canvas.height = 450;
-    ctx.fillStyle = "#111"; ctx.fillRect(0,0,800,450);
+    drawPlaceholder();
+    if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(() => { if (mode === 'none') drawPlaceholder(); });
+    }
 </script>
 </body>
 </html>
