@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DISPLACE · Demien Rapp</title>
+    <title>DISPLACEMENT_UNIT · Demien Rapp</title>
 
     <!-- MANUAL: self-hosted verlangt. Beim Deploy dieses CDN gegen eigene @font-face tauschen. -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -272,7 +272,18 @@
         button:disabled:hover { background: var(--paper); color: var(--ink); }
 
         .full-width { grid-column: span 2; }
-        input[type="file"] { display: none; }
+
+        /* file-input nicht display:none -> sonst nicht per tab erreichbar. */
+        /* visuell weg, aber fokussierbar; fokusring zeigt das label. */
+        .file-label { position: relative; }
+        .file-label input[type="file"] {
+            position: absolute;
+            width: 1px; height: 1px;
+            margin: -1px; padding: 0; border: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .file-label:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
 
         footer {
             grid-column: 1 / -1;
@@ -312,35 +323,38 @@
     <!-- RECHTS: PARAMETER -->
     <aside class="controls">
         <div>
+            <div class="eyebrow">Source</div>
             <div class="button-group">
                 <label class="file-label">
-                    Load Source
+                    Import Source
                     <input type="file" id="file-source" accept="image/*,video/*">
                 </label>
                 <button id="btn-cam">Live_Cam</button>
                 <label class="file-label full-width">
-                    Load Custom Map
+                    Import Map
                     <input type="file" id="file-map" accept="image/*">
                 </label>
             </div>
         </div>
 
         <div>
+            <div class="eyebrow">Displacement</div>
             <div class="control-item">
                 <div class="control-header"><span>X_Strength</span><span class="val" id="v-x">60</span></div>
-                <input type="range" id="s-x" min="-400" max="400" value="60">
+                <input type="range" id="s-x" min="-400" max="400" value="60" aria-label="X Strength">
             </div>
             <div class="control-item">
                 <div class="control-header"><span>Y_Strength</span><span class="val" id="v-y">0</span></div>
-                <input type="range" id="s-y" min="-400" max="400" value="0">
+                <input type="range" id="s-y" min="-400" max="400" value="0" aria-label="Y Strength">
             </div>
             <div class="control-item">
                 <div class="control-header"><span>Threshold</span><span class="val" id="v-t">100</span></div>
-                <input type="range" id="s-t" min="0" max="255" value="100">
+                <input type="range" id="s-t" min="0" max="255" value="100" aria-label="Threshold">
             </div>
         </div>
 
         <div>
+            <div class="eyebrow">Output</div>
             <div class="button-group">
                 <button id="btn-save">Save Still (PNG)</button>
                 <button id="btn-rec">Record Video</button>
@@ -368,14 +382,16 @@
     // willReadFrequently: verhindert das Deopt beim wiederholten getImageData
     const pCan = document.createElement('canvas');
     const pCtx = pCan.getContext('2d', { willReadFrequently: true });
-    const mCan = document.createElement('canvas');
-    const mCtx = mCan.getContext('2d', { willReadFrequently: true });
+    // map-canvas erst anlegen wenn wirklich eine custom-map kommt
+    let mCan = null, mCtx = null;
 
-    let mode = 'none', isProc = false, sourceImg = null, mapImg = null;
+    let mode = 'none', sourceImg = null, mapImg = null;
+    let needsRender = false;           // still-modus rendert nur wenn was passiert ist
     let recorder, chunks = [];
     let camStream = null;
+    let videoURL = null;               // aktive blob-url der video-quelle, wird revoked
 
-    let outBuf = null;
+    let outBuf = null, outImg = null;
     let mapCache = null, mapCacheImg = null, mapCacheW = 0, mapCacheH = 0;
 
     const isMobile = window.matchMedia('(pointer: coarse)').matches
@@ -416,6 +432,7 @@
         camStream = null;
         video.srcObject = null;
         btnCam.classList.remove('active');
+        btnCam.textContent = 'Live_Cam';
     }
 
     function loadFile(file, isMap) {
@@ -424,23 +441,36 @@
         if (!isMap) {
             stopCam();
             if (file.type.startsWith('video/')) {
-                mode = 'video'; video.src = url;
+                if (videoURL) URL.revokeObjectURL(videoURL);   // alte video-quelle freigeben
+                videoURL = url;
+                mode = 'video';
+                video.srcObject = null;
+                video.src = url;
                 video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight, limitFor('video')); video.play(); };
             } else {
                 mode = 'image';
                 const img = new Image();
-                img.onload = () => { sourceImg = img; initDim(img.width, img.height, limitFor('image')); render(); };
+                img.onload = () => {
+                    URL.revokeObjectURL(url);                   // bild dekodiert, url weg
+                    sourceImg = img;
+                    initDim(img.width, img.height, limitFor('image'));
+                    needsRender = true;
+                };
                 img.src = url;
             }
         } else {
             const img = new Image();
-            img.onload = () => { mapImg = img; mapCacheImg = null; render(); };
+            img.onload = () => {
+                URL.revokeObjectURL(url);
+                mapImg = img; mapCacheImg = null; needsRender = true;
+            };
             img.src = url;
         }
     }
 
     function initDim(w, h, limit) {
-        const scale = w > limit ? limit / w : 1;
+        // laengere kante limitieren, sonst sprengt ein panorama den loop
+        const scale = Math.min(1, limit / Math.max(w, h));
         canvas.width = Math.floor(w * scale);
         canvas.height = Math.floor(h * scale);
     }
@@ -456,25 +486,34 @@
             camStream = await navigator.mediaDevices.getUserMedia({
                 video: { width: { ideal: 1280 }, facingMode: { ideal: 'environment' } }
             });
-            video.srcObject = camStream; mode = 'live';
+            video.src = '';                                    // alte datei-quelle vom element loesen
+            video.srcObject = camStream;
+            mode = 'live';
             video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight, limitFor('live')); video.play(); };
             this.classList.add('active');
-        } catch (e) { alert("Access Denied"); camStream = null; }
+            this.textContent = 'Stop_Cam';
+        } catch (e) { alert('ERROR: CAMERA_ACCESS_DENIED'); camStream = null; }
     };
 
     function render() {
-        if (isProc || mode === 'none') return;
+        if (mode === 'none') return;
         if ((mode === 'video' || mode === 'live') && video.readyState < 2) return;
-        isProc = true;
 
         const strX = parseInt(sX.value);
         const strY = parseInt(sY.value);
         const thresh = parseInt(sT.value);
 
         const w = canvas.width, h = canvas.height;
-        pCan.width = w; pCan.height = h;
+        const src = mode === 'image' ? sourceImg : video;
 
-        pCtx.drawImage(mode === 'image' ? sourceImg : video, 0, 0, w, h);
+        // kein versatz -> loop komplett sparen, direkt durchreichen
+        if (strX === 0 && strY === 0) {
+            ctx.drawImage(src, 0, 0, w, h);
+            return;
+        }
+
+        pCan.width = w; pCan.height = h;
+        pCtx.drawImage(src, 0, 0, w, h);
         const sData = pCtx.getImageData(0, 0, w, h);
         const pix = sData.data;
 
@@ -484,6 +523,7 @@
             if (mapCacheImg === mapImg && mapCacheW === w && mapCacheH === h) {
                 mData = mapCache;
             } else {
+                if (!mCan) { mCan = document.createElement('canvas'); mCtx = mCan.getContext('2d', { willReadFrequently: true }); }
                 mCan.width = w; mCan.height = h;
                 mCtx.drawImage(mapImg, 0, 0, w, h);
                 mData = mCtx.getImageData(0, 0, w, h).data;
@@ -494,20 +534,22 @@
         }
 
         const need = pix.length;
-        if (!outBuf || outBuf.length !== need) outBuf = new Uint8ClampedArray(need);
+        if (!outBuf || outBuf.length !== need) {
+            outBuf = new Uint8ClampedArray(need);
+            outImg = new ImageData(outBuf, w, h);              // einmal wrappen, nicht pro frame
+        }
         outBuf.set(pix);
 
         const maxX = w - 1, maxY = h - 1;
+        const t3 = thresh * 3;                                 // spart die division im heissen pfad
+        let i = 0;
         for (let y = 0; y < h; y++) {
-            const row = y * w;
-            for (let x = 0; x < w; x++) {
-                const i = (row + x) * 4;
-                const mVal = (mData[i] + mData[i + 1] + mData[i + 2]) / 3;
-
-                if (mVal > thresh) {
-                    const f = (mVal - 128) / 128;
-                    let tx = x + Math.floor(f * strX);
-                    let ty = y + Math.floor(f * strY);
+            for (let x = 0; x < w; x++, i += 4) {
+                const sum = mData[i] + mData[i + 1] + mData[i + 2];
+                if (sum > t3) {
+                    const f = (sum / 3 - 128) / 128;
+                    let tx = x + ((f * strX) | 0);             // | 0 truncated symmetrisch um null
+                    let ty = y + ((f * strY) | 0);
                     if (tx < 0) tx = 0; else if (tx > maxX) tx = maxX;
                     if (ty < 0) ty = 0; else if (ty > maxY) ty = maxY;
                     const ti = (ty * w + tx) * 4;
@@ -519,31 +561,36 @@
             }
         }
 
-        ctx.putImageData(new ImageData(outBuf, w, h), 0, 0);
-        isProc = false;
+        ctx.putImageData(outImg, 0, 0);
     }
 
     function anim() {
-        if ((mode === 'video' || mode === 'live') && video.readyState >= 2) render();
+        if ((mode === 'video' || mode === 'live') && video.readyState >= 2) {
+            render();
+        } else if (needsRender && mode === 'image') {
+            needsRender = false;
+            render();
+        }
         requestAnimationFrame(anim);
     }
     anim();
 
     [sX, sY, sT].forEach(el => el.oninput = () => {
         document.getElementById('v-' + el.id.split('-')[1]).textContent = el.value;
-        if (mode === 'image') render();
+        if (mode === 'image') needsRender = true;              // loop rendert, nicht jedes event
     });
 
     document.getElementById('btn-save').onclick = () => {
         const a = document.createElement('a');
         a.href = canvas.toDataURL('image/png');
-        a.download = `DR_UNIT_${Date.now()}.png`; a.click();
+        a.download = `DR_DISPLACE_${Date.now()}.png`; a.click();
     };
 
     btnRec.onclick = function() {
         if (recorder && recorder.state === "recording") {
             recorder.stop();
             this.classList.remove('active');
+            this.textContent = 'Record Video';
             document.getElementById('rec-ui').style.display = "none";
         } else {
             chunks = [];
@@ -555,10 +602,11 @@
             recorder.onstop = () => {
                 const b = new Blob(chunks, { type: mime || 'video/webm' });
                 const a = document.createElement('a');
-                a.href = URL.createObjectURL(b); a.download = `DR_UNIT_SIG_${Date.now()}.${ext}`; a.click();
+                a.href = URL.createObjectURL(b); a.download = `DR_DISPLACE_${Date.now()}.${ext}`; a.click();
             };
             recorder.start();
             this.classList.add('active');
+            this.textContent = 'Stop Recording';
             document.getElementById('rec-ui').style.display = "flex";
         }
     };
