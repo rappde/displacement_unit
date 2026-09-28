@@ -1,308 +1,242 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DISPLACEMENT_UNIT · Demien Rapp</title>
+    <title>Displacement_Unit · Demien Rapp</title>
+    <script>
+        // eingebettet auf rappde.com/tools? dann ohne titelzeile und credit
+        try { if (window.self !== window.top) document.documentElement.classList.add('is-embedded'); } catch (e) { document.documentElement.classList.add('is-embedded'); }
+    </script>
 
     <!-- MANUAL: self-hosted verlangt. Beim Deploy dieses CDN gegen eigene @font-face tauschen. -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700;12..96,800&family=Inter:wght@400;600&family=JetBrains+Mono:wght@500;700&family=Silkscreen&display=swap" rel="stylesheet">
 
     <style>
-        :root {
-            --paper: #F2F0EB;
-            --ink: #0B0B0C;
-            --muted: #56565B;
-            --line: #D7D4CC;
-            --hi: #000000;
-            --ink-raise: #E8E5DD;
-            --line-soft: #E3E0D8;
-            --invert-bg: #0B0B0C;
-            --invert-fg: #F2F0EB;
-
-            --container: 1240px;
-            --gutter: clamp(18px, 4vw, 56px);
-            --ease-out: cubic-bezier(.16, 1, .3, 1);
-            --speed: 0.5s;
-
-            --font-display: 'Bricolage Grotesque', sans-serif;
-            --font-body: 'Inter', sans-serif;
-            --font-mono: 'JetBrains Mono', monospace;
-            --font-pixel: 'Silkscreen', monospace;
+        @font-face {
+            font-family: "Endless";
+            src: url("fonts/Endless.ttf") format("truetype");
+            font-display: swap;
         }
+
+        :root {
+            --paper: #fff;
+            --ink: #000;
+            --muted: #595959;
+            --soft: #ddd;
+            --stage: #000;
+            --link: #00e;
+            --stroke: 3px;
+            --line: 24px;
+            --half: 12px;
+            --gap: 24px;
+            --touch: 44px;
+            --controls: 300px;
+        }
+        @media (max-width: 1023px) { :root { --gap: 18px; } }
+        @media (max-width: 767px)  { :root { --gap: 12px; } }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        html, body { margin: 0; }
-
+        html { background: var(--paper); }
         body {
+            margin: 0;
+            padding: var(--gap);
             background: var(--paper);
             color: var(--ink);
-            font-family: var(--font-body);
-            font-size: clamp(0.95rem, 0.9rem + 0.3vw, 1.05rem);
-            line-height: 1.55;
-            -webkit-font-smoothing: antialiased;
+            font-family: "Endless", Arial, Helvetica, sans-serif;
+            font-size: 20px;
+            line-height: var(--line);
+            -webkit-font-smoothing: none;
         }
 
-        /* ---- INVERTIERTER BLOCK (genau 1x pro Seite) ---- */
+        /* titelzeile, nur wenn das tool allein offen ist */
         .topbar {
-            background: var(--invert-bg);
-            color: var(--invert-fg);
-            padding: clamp(20px, 3vw, 34px) var(--gutter);
-        }
-        .topbar-inner {
-            max-width: var(--container);
-            margin: 0 auto;
-            display: flex;
-            align-items: baseline;
-            justify-content: space-between;
-            gap: 16px;
-            flex-wrap: wrap;
+            border-bottom: var(--stroke) solid var(--ink);
+            padding-bottom: var(--half);
+            margin-bottom: var(--line);
         }
         .brand {
-            font-family: var(--font-display);
-            font-weight: 800;
-            font-size: clamp(2.2rem, 7vw, 5.5rem);
-            line-height: 0.88;
-            letter-spacing: -0.03em;
             margin: 0;
+            font-size: 48px;
+            line-height: 48px;
+            font-weight: 400;
             text-transform: uppercase;
             overflow-wrap: anywhere;
         }
-        .brand-meta {
-            font-family: var(--font-mono);
-            font-weight: 500;
-            font-size: clamp(0.72rem, 0.7rem + 0.2vw, 0.82rem);
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-            color: rgba(242, 240, 235, 0.55);
-            margin: 0;
-        }
-        .pixel {
-            font-family: var(--font-pixel);
-            font-size: 0.66em;
-            color: var(--invert-fg);
-            letter-spacing: 0;
-        }
+        @media (max-width: 767px) { .brand { font-size: 32px; line-height: 36px; } }
 
-        @media (prefers-reduced-motion: no-preference) {
-            .brand { animation: glitch var(--speed) var(--ease-out) both; }
-            .topbar:hover .brand { animation: glitch var(--speed) var(--ease-out); }
-            @keyframes glitch {
-                0%   { transform: translateX(0); text-shadow: none; }
-                18%  { transform: translateX(-3px); text-shadow: 3px 0 var(--paper), -3px 0 var(--invert-bg); }
-                36%  { transform: translateX(2px); text-shadow: -2px 0 var(--paper); }
-                54%  { transform: translateX(-1px); text-shadow: 2px 0 var(--paper); }
-                100% { transform: translateX(0); text-shadow: none; }
-            }
-        }
-
-        /* ---- LAYOUT ---- */
         .container {
-            max-width: var(--container);
-            margin: 0 auto;
-            padding: clamp(28px, 5vw, 64px) var(--gutter) clamp(40px, 6vw, 96px);
             display: grid;
-            grid-template-columns: 1fr 380px;
-            gap: clamp(24px, 4vw, 48px);
+            grid-template-columns: minmax(0, 1fr) var(--controls);
+            gap: var(--gap);
             align-items: start;
         }
 
-        @media (max-width: 900px) {
-            .container {
-                display: flex;
-                flex-direction: column;
-                gap: 24px;
-            }
-            .viewport { order: 1; }
-            .controls, footer { order: 2; }
-            canvas { max-height: 50vh; }
-        }
-
-        /* ---- VIEWPORT ---- */
+        /* buehne */
         .viewport {
-            width: 100%;
-            background: var(--ink-raise);
-            border: 1px solid var(--ink);
+            position: sticky;
+            top: var(--gap);
+            background: var(--stage);
             display: flex;
             align-items: center;
             justify-content: center;
             min-height: 280px;
             overflow: hidden;
-            position: sticky;
-            top: 12px;
         }
         canvas {
+            display: block;
             max-width: 100%;
             height: auto;
-            max-height: 80vh;
+            max-height: calc(100vh - var(--gap) * 2);
             image-rendering: pixelated;
-            display: block;
+        }
+
+        .crt-active::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(rgba(0, 0, 0, 0) 50%, rgba(0, 0, 0, .25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
         }
 
         .rec-indicator {
             position: absolute;
-            top: 12px;
-            right: 12px;
+            top: var(--half);
+            right: var(--half);
             display: none;
             align-items: center;
             gap: 8px;
             z-index: 20;
             background: var(--ink);
             color: var(--paper);
-            font-family: var(--font-mono);
-            font-weight: 700;
-            font-size: 0.7rem;
-            letter-spacing: 0.14em;
-            padding: 5px 9px;
+            font-size: 12px;
+            line-height: 16px;
+            letter-spacing: .12em;
+            padding: 4px 8px;
         }
         .rec-indicator::before {
             content: "";
-            width: 9px;
-            height: 9px;
+            width: 10px;
+            height: 10px;
             background: var(--paper);
             animation: blink 1s steps(1) infinite;
         }
         @keyframes blink { 50% { opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { .rec-indicator::before { animation: none; } }
 
-        /* ---- CONTROLS ---- */
+        /* regler */
         .controls {
+            border-left: var(--stroke) solid var(--ink);
+            padding-left: var(--gap);
             display: flex;
             flex-direction: column;
-            gap: clamp(24px, 3vw, 34px);
+            gap: var(--line);
         }
 
         .eyebrow {
-            font-family: var(--font-mono);
-            font-weight: 700;
-            font-size: 0.72rem;
+            margin: 0 0 var(--half);
+            font-size: 14px;
+            line-height: 20px;
+            font-weight: 400;
+            letter-spacing: .1em;
             text-transform: uppercase;
-            letter-spacing: 0.16em;
-            color: var(--ink);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 16px;
+            border-bottom: var(--stroke) solid var(--ink);
+            padding-bottom: var(--half);
         }
-        .eyebrow::before {
-            content: "";
-            width: 24px;
-            height: 1px;
-            background: var(--ink);
-            flex: none;
-        }
+        .hint { margin: var(--half) 0 0; font-size: 16px; line-height: var(--line); color: var(--muted); }
 
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 18px;
-        }
+        .control-item { display: flex; flex-direction: column; }
+        .control-item + .control-item { margin-top: var(--half); }
         .control-header {
             display: flex;
             justify-content: space-between;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
+            gap: var(--half);
+            font-size: 12px;
+            line-height: 16px;
+            letter-spacing: .12em;
             text-transform: uppercase;
-            letter-spacing: 0.08em;
             color: var(--muted);
         }
-        .control-header .val { color: var(--ink); font-weight: 700; }
+        .control-header .val { color: var(--ink); font-variant-numeric: tabular-nums; }
 
-        /* ---- SLIDERS ---- */
         input[type="range"] {
             -webkit-appearance: none;
             appearance: none;
+            display: block;
             width: 100%;
-            height: 1px;
-            background: var(--line);
-            outline: none;
-            margin: 16px 0;
+            height: var(--touch);
+            margin: 0;
+            background: transparent;
+            cursor: pointer;
             touch-action: pan-y;
         }
+        input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--soft); }
+        input[type="range"]::-moz-range-track { height: 3px; background: var(--soft); }
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 44px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
+            margin-top: -10.5px;
             background: var(--ink);
-            border: 1px solid var(--paper);
+            border: 0;
             border-radius: 0;
-            cursor: pointer;
         }
-        input[type="range"]::-moz-range-thumb {
-            width: 44px;
-            height: 22px;
-            background: var(--ink);
-            border: 1px solid var(--paper);
-            border-radius: 0;
-            cursor: pointer;
-        }
-        input[type="range"]:active::-webkit-slider-thumb { background: var(--paper); border-color: var(--ink); }
-        input[type="range"]:active::-moz-range-thumb { background: var(--paper); border-color: var(--ink); }
-        input[type="range"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; }
+        input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; background: var(--ink); border: 0; border-radius: 0; }
+        input[type="range"]:focus-visible { outline: var(--stroke) solid var(--ink); outline-offset: 3px; }
 
-        /* ---- BUTTONS ---- */
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
+        .button-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         button, .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            min-height: var(--touch);
+            padding: 8px 12px;
+            margin: 0;
+            font: inherit;
+            font-size: 14px;
+            line-height: 20px;
+            letter-spacing: .1em;
+            text-transform: uppercase;
             background: var(--paper);
             color: var(--ink);
-            border: 1px solid var(--ink);
+            border: var(--stroke) solid var(--ink);
             border-radius: 0;
-            padding: 14px;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
             cursor: pointer;
-            text-align: center;
-            display: block;
-            min-height: 46px;
-            transition: background var(--speed) var(--ease-out), color var(--speed) var(--ease-out);
+            position: relative;
         }
-        button:hover, .file-label:hover { background: var(--ink); color: var(--paper); }
-        button:focus-visible, .file-label:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
-        button.active { background: var(--ink); color: var(--paper); }
-        button:disabled { opacity: 0.35; cursor: not-allowed; }
+        button:hover, .file-label:hover, button.active, button.recording { background: var(--ink); color: var(--paper); }
+        button:focus-visible, .file-label:focus-within { outline: var(--stroke) solid var(--ink); outline-offset: 3px; }
+        button:disabled { opacity: .35; cursor: not-allowed; }
         button:disabled:hover { background: var(--paper); color: var(--ink); }
+        .full-width { grid-column: 1 / -1; }
 
-        .full-width { grid-column: span 2; }
+        /* file-input nicht display:none, sonst per tab nicht erreichbar */
+        .file-label input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
 
-        /* file-input nicht display:none -> sonst nicht per tab erreichbar. */
-        /* visuell weg, aber fokussierbar; fokusring zeigt das label. */
-        .file-label { position: relative; }
-        .file-label input[type="file"] {
-            position: absolute;
-            width: 1px; height: 1px;
-            margin: -1px; padding: 0; border: 0;
-            opacity: 0;
-            overflow: hidden;
-        }
-        .file-label:focus-within { outline: 2px solid var(--ink); outline-offset: 3px; }
+        footer { margin: 0; font-size: 16px; line-height: var(--line); color: var(--muted); }
+        footer a { color: var(--link); }
 
-        footer {
-            grid-column: 1 / -1;
-            margin-top: 8px;
-            font-family: var(--font-mono);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 0.12em;
-            color: var(--muted);
-            border-top: 1px solid var(--line);
-            padding-top: 16px;
+        @media (max-width: 899px) {
+            .container { grid-template-columns: 1fr; }
+            .viewport { position: relative; top: 0; }
+            canvas { max-height: 50vh; }
+            .controls { border-left: 0; padding-left: 0; border-top: var(--stroke) solid var(--ink); padding-top: var(--line); }
         }
-        footer a {
-            color: var(--ink);
-            text-decoration: none;
-            border-bottom: 1px solid var(--ink);
-            transition: background var(--speed) var(--ease-out), color var(--speed) var(--ease-out);
+
+        /* eingebettet auf rappde.com/tools: der name steht dort schon, das tool fuellt das iframe */
+        .is-embedded .topbar, .is-embedded footer { display: none; }
+        .is-embedded body { padding: 0; }
+        @media (min-width: 900px) {
+            .is-embedded, .is-embedded body { height: 100%; }
+            .is-embedded body { overflow: hidden; }
+            .is-embedded .container { height: 100%; align-items: stretch; }
+            .is-embedded .viewport { position: relative; top: 0; }
+            .is-embedded canvas { max-height: 100%; }
+            .is-embedded .controls { overflow: auto; }
         }
-        footer a:hover { background: var(--ink); color: var(--paper); }
     </style>
 </head>
 <body>
@@ -323,22 +257,23 @@
     <!-- RECHTS: PARAMETER -->
     <aside class="controls">
         <div>
-            <div class="eyebrow">Source</div>
+            <h2 class="eyebrow">Source</h2>
             <div class="button-group">
                 <label class="file-label">
-                    Import Source
+                    Import source
                     <input type="file" id="file-source" accept="image/*,video/*">
                 </label>
                 <button id="btn-cam">Live_Cam</button>
                 <label class="file-label full-width">
-                    Import Map
+                    Import map
                     <input type="file" id="file-map" accept="image/*">
                 </label>
             </div>
+                <p class="hint">Uses your camera on request. Nothing leaves your browser.</p>
         </div>
 
         <div>
-            <div class="eyebrow">Displacement</div>
+            <h2 class="eyebrow">Displacement</h2>
             <div class="control-item">
                 <div class="control-header"><span>X_Strength</span><span class="val" id="v-x">60</span></div>
                 <input type="range" id="s-x" min="-400" max="400" value="60" aria-label="X Strength">
@@ -354,17 +289,15 @@
         </div>
 
         <div>
-            <div class="eyebrow">Output</div>
+            <h2 class="eyebrow">Output</h2>
             <div class="button-group">
-                <button id="btn-save">Save Still (PNG)</button>
-                <button id="btn-rec">Record Video</button>
+                <button id="btn-save">Save still (PNG)</button>
+                <button id="btn-rec">Record video</button>
             </div>
         </div>
     </aside>
 
-    <footer>
-        THIS WAS MADE BY <a href="https://rappde.com" target="_blank" rel="noopener">RAPPDE.COM</a>
-    </footer>
+    <footer>Made by <a href="https://rappde.com">rappde.com</a></footer>
 </main>
 
 <video id="hidden-video" autoplay muted loop playsinline style="display:none"></video>
@@ -407,23 +340,24 @@
     const recSupported = typeof canvas.captureStream === 'function' && typeof window.MediaRecorder === 'function';
     if (!recSupported) {
         btnRec.disabled = true;
-        btnRec.textContent = 'Rec N/A';
+        btnRec.textContent = 'Rec n/a';
     }
 
     document.getElementById('file-source').onchange = (e) => loadFile(e.target.files[0], false);
     document.getElementById('file-map').onchange = (e) => loadFile(e.target.files[0], true);
 
-    // Leerer Zustand: Paper-Fläche mit Mono-Label statt schwarzem Block
-    function drawPlaceholder() {
+    // leerer zustand und meldungen: weiss auf der schwarzen buehne
+    function drawPlaceholder(text = 'NO INPUT') {
         ctx.globalCompositeOperation = 'source-over';
-        ctx.fillStyle = '#E8E5DD';
+        ctx.fillStyle = '#000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#0B0B0C';
-        const fs = Math.max(14, Math.round(canvas.width * 0.035));
-        ctx.font = '700 ' + fs + "px 'JetBrains Mono', monospace";
+        ctx.fillStyle = '#fff';
+        let fs = Math.max(14, Math.round(canvas.width * 0.035));
+        ctx.font = fs + 'px Endless, Arial, sans-serif';
+        while (fs > 10 && ctx.measureText(text).width > canvas.width * 0.9) { fs--; ctx.font = fs + 'px Endless, Arial, sans-serif'; }
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('NO INPUT', canvas.width / 2, canvas.height / 2);
+        ctx.fillText(text, canvas.width / 2, canvas.height / 2);
     }
 
     function stopCam() {
@@ -491,8 +425,8 @@
             mode = 'live';
             video.onloadedmetadata = () => { initDim(video.videoWidth, video.videoHeight, limitFor('live')); video.play(); };
             this.classList.add('active');
-            this.textContent = 'Stop_Cam';
-        } catch (e) { alert('ERROR: CAMERA_ACCESS_DENIED'); camStream = null; }
+            this.textContent = 'Live_Cam';
+        } catch (e) { drawPlaceholder('Camera blocked. Allow it or import a file.'); camStream = null; }
     };
 
     function render() {
@@ -590,7 +524,7 @@
         if (recorder && recorder.state === "recording") {
             recorder.stop();
             this.classList.remove('active');
-            this.textContent = 'Record Video';
+            this.textContent = 'Record video';
             document.getElementById('rec-ui').style.display = "none";
         } else {
             chunks = [];
@@ -606,7 +540,7 @@
             };
             recorder.start();
             this.classList.add('active');
-            this.textContent = 'Stop Recording';
+            this.textContent = 'Stop recording';
             document.getElementById('rec-ui').style.display = "flex";
         }
     };
